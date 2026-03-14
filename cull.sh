@@ -2,6 +2,7 @@
 
 DAYS="${1:-90}"
 MIN_SIZE_MB="${2:-0}"
+TOTAL_SAVED_MB=0
 
 # Core Functions
 find_dirs() {
@@ -13,24 +14,59 @@ find_dirs() {
         find "$dir" -maxdepth 1 -mindepth 1 -type d -atime +"$days" 2>/dev/null
     done
 }
-get_sizes() {
-    echo "$1" | tr '\n' '\0' | xargs -0 du -sh
-}
-filter_out_small() {
-    awk -v min="$MIN_SIZE_MB" '
+
+filter_and_sum() {
+    get_sizes "$1" | sort -rh | sed "s|$HOME|~|g" | awk -v min="$MIN_SIZE_MB" '
+        function to_mb(size,    unit, value) {
+            unit = substr(size, length(size))
+            value = substr(size, 1, length(size)-1) + 0
+            if (unit == "K") return value / 1024
+            if (unit == "G") return value * 1024
+            return value
+        }
         {
-            unit = substr($1, length($1))
-            value = substr($1, 1, length($1)-1) + 0
-
-            if (unit == "K") value = value / 1024
-            else if (unit == "G") value = value * 1024
-
-            if (value > min) print $0
+            mb = to_mb($1)
+            if (mb > min) {
+                print $0
+                total += mb
+            }
+        }
+        END {
+            if (total >= 1024) printf "%.1fG\n", total / 1024
+            else printf "%.1fM\n", total
         }
     '
 }
-print_targets() {
-    get_sizes "$1" | filter_out_small | sed "s|$HOME|~|g" | sort -rh
+
+get_sizes() { echo "$1" | tr '\n' '\0' | xargs -0 du -sh; } # $1 must be non-empty
+
+to_mb() {
+    local size="$1"
+    local unit="${size: -1}"
+    local value="${size%?}"
+    if [[ "$unit" == "G" ]]; then echo "$value * 1024" | bc
+    elif [[ "$unit" == "K" ]]; then echo "scale=4; $value / 1024" | bc
+    else echo "$value"
+    fi
+}
+
+format_mb() {
+    local mb="$1"
+    if (( $(echo "$mb >= 1024" | bc) )); then
+        printf "%.1fG" "$(echo "scale=1; $mb / 1024" | bc)"
+    else
+        printf "%.1fM" "$mb"
+    fi
+}
+
+delete_dirs() {
+    while IFS= read -r line; do
+        local dir
+        dir=$(echo "$line" | cut -f2 | sed "s|~|$HOME|g")
+        [ -d "$dir" ] || continue
+
+        rm -rf "$dir"
+    done <<< "$1"
 }
 
 # CLI Functions
@@ -56,19 +92,18 @@ cull_directories=(
     "$HOME/Library/Caches"
     "$HOME/Library/Logs"
     "$HOME/Library/Containers/*/Data/Library/Caches"
-    "$HOME/Library/Group Containers/*/Library/Caches"
 
     "$HOME/Library/Developer/CoreSimulator"
     "$HOME/Library/Developer/Xcode/DerivedData"
-    "$HOME/Library/Developer/Xcode/IOS DeviceSupport"
+    "$HOME/Library/Developer/Xcode/iOS DeviceSupport"
     "$HOME/Library/Application Support/MobileSync/Backup"
 )
 
-pink $hr; newline
+pink "$hr"; newline
 pink "Cull will find directories using the following criteria:"; newline
 pink "- last read more than: $DAYS days ago"; newline
 pink "- size greater than: ${MIN_SIZE_MB}MB"; newline
-pink $hr; newline
+pink "$hr"; newline
 
 pink "Continue? [Y/n] "; confirm "y" || exit 1
 
@@ -76,10 +111,27 @@ for root_dir in "${cull_directories[@]}"; do
     dirs=$(find_dirs "$root_dir")
     [ -z "$dirs" ] && continue
 
+    filter_sum=$(filter_and_sum "$dirs")
+    targets=$(echo "$filter_sum" | sed '$d')
+    total=$(echo "$filter_sum" | tail -n 1)
+    [ -z "$targets" ] && continue
+
     newline
     blue "$root_dir"; newline
     blue $hr; newline
-    print_targets "$dirs"; newline
+    echo "$targets"
 
-    red "Continue? [Y/n] "; confirm "y" || exit 1
+    newline
+    orange "Total size: $total"; newline; newline
+
+    red "Delete these directories? [y/N] "; confirm || continue
+    delete_dirs "$targets"
+    green "Removed $total of files."; newline
+    TOTAL_SAVED_MB=$(echo "$TOTAL_SAVED_MB + $(to_mb "$total")" | bc)
 done
+
+[ "$TOTAL_SAVED_MB" = 0 ] && exit 0
+newline
+green "$hr"; newline
+green "Total space saved: $(format_mb "$TOTAL_SAVED_MB")"; newline
+green "$hr"; newline; newline
