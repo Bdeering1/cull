@@ -2,6 +2,8 @@
 
 Reclaim disk space by removing stale caches, logs, and unneeded files.
 
+The goal of this project is to provide a safe and transparent tool for removing unneeded bloat on macOS. Cull operates only on the directories listed below and never touches system files. Confirmation is explicitly requested before every deletion. The only pre-requisite is Bash 3.2+ which ships with macOS by default.
+
 ## Usage
 
 ```sh
@@ -15,7 +17,7 @@ cd cull && ./cull
 |---|---|---|
 | `--age <days>` | Minimum days since a directory was last accessed | `90` |
 | `--min-size <mb>` | Minimum directory size in MB | `0` |
-| `--dry` | Preview results without deleting anything | `false` |
+| `--dry` | Preview without risk of deletion | `false` |
 | `--help` | Show usage information | |
 
 ## Target Directories
@@ -39,9 +41,3 @@ cd cull && ./cull
 **MobileSync Backup**: Local iOS device backups. Before deleting, ensure your device is backed up to iCloud or you have another backup available.
 
 **CoreSimulator**: Data for iOS simulators. Safe to delete for simulators you no longer use.
-
-## Safety
-
-- Cull operates only on the directories listed above and never touches system files
-- Every deletion requires explicit confirmation
-- Use `--dry` to preview exactly what would be removed with risk of deletion
