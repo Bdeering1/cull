@@ -1,13 +1,40 @@
 #!/usr/bin/env bash
 
-DAYS="${1:-90}"
-MIN_SIZE_MB="${2:-0}"
-TOTAL_SAVED_MB=0
+export COLUMNS
+
+AGE_DAYS=90
+MIN_SIZE_MB=0
+DRY_RUN=false
+
+usage() {
+    echo
+    echo "Cull - Interactive disk cleanup tool for macOS"
+    echo
+    echo "Usage: cull [options]"
+    echo ""
+    echo "Options:"
+    echo "  --age <days>      Minimum days since last accessed  (default: $AGE_DAYS)"
+    echo "  --min-size <mb>   Minimum directory size in MB      (default: $MIN_SIZE_MB)"
+    echo "  --dry             Preview without deleting"
+    echo "  --help            Show this help message"
+    echo
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --age) AGE_DAYS="$2"; shift ;;
+        --min-size) MIN_SIZE_MB="$2"; shift ;;
+        --dry) DRY_RUN=true ;;
+        --help) usage; exit 0 ;;
+        *) ;;
+    esac
+    shift
+done
 
 # Core Functions
 find_dirs() {
     local pattern="$1"
-    local days="${2:-$DAYS}"
+    local days="${2:-$AGE_DAYS}"
 
     for dir in $pattern; do
         [ -d "$dir" ] || continue
@@ -44,6 +71,7 @@ to_mb() {
     local size="$1"
     local unit="${size: -1}"
     local value="${size%?}"
+
     if [[ "$unit" == "G" ]]; then echo "$value * 1024" | bc
     elif [[ "$unit" == "K" ]]; then echo "scale=4; $value / 1024" | bc
     else echo "$value"
@@ -77,7 +105,10 @@ orange()     { clr "$1" 11; }
 blue()       { clr "$1" 12; }
 pink()       { clr "$1" 13; }
 newline() { echo; }
-hr=--------------------------------------------------------------------------------
+hr() {
+    width=$(stty size 2>/dev/null | cut -d' ' -f2 || echo 80)
+    printf '%*s\n' "$width" '' | tr ' ' '-';
+}
 
 confirm() {
     local default="${1:-n}"
@@ -99,14 +130,16 @@ cull_directories=(
     "$HOME/Library/Application Support/MobileSync/Backup"
 )
 
-pink "$hr"; newline
-pink "Cull will find directories using the following criteria:"; newline
-pink "- last read more than: $DAYS days ago"; newline
-pink "- size greater than: ${MIN_SIZE_MB}MB"; newline
-pink "$hr"; newline
+pink "$(hr)"; newline
+pink "Cull - Interactive disk cleanup tool for macOS"; newline; newline
+pink "Finding stale caches, logs, and unneeded files using these criteria:"; newline
+pink "  - last accessed more than: $AGE_DAYS days ago"; newline
+pink "  - size greater than: ${MIN_SIZE_MB}MB"; newline
+pink "$(hr)"; newline
 
-pink "Continue? [Y/n] "; confirm "y" || exit 1
+pink "Continue? [Y/n] "; confirm "y" || exit 0
 
+TOTAL_SAVED_MB=0
 for root_dir in "${cull_directories[@]}"; do
     dirs=$(find_dirs "$root_dir")
     [ -z "$dirs" ] && continue
@@ -118,20 +151,32 @@ for root_dir in "${cull_directories[@]}"; do
 
     newline
     blue "$root_dir"; newline
-    blue $hr; newline
+    blue "$(hr)"; newline
     echo "$targets"
 
     newline
     orange "Total size: $total"; newline; newline
 
-    red "Delete these directories? [y/N] "; confirm || continue
+    if $DRY_RUN; then
+        red "Skipped directory removal (dry run)."; newline
+        green "Continue? [Y/n] "
+        confirm "y" || exit 0
+        continue
+    fi
+
+    red "Delete these directories? [y/N] "
+    if ! confirm; then
+        green "Skipped directory removal."; newline
+        continue
+    fi
+
     delete_dirs "$targets"
     green "Removed $total of files."; newline
     TOTAL_SAVED_MB=$(echo "$TOTAL_SAVED_MB + $(to_mb "$total")" | bc)
 done
 
-[ "$TOTAL_SAVED_MB" = 0 ] && exit 0
+if [ "$TOTAL_SAVED_MB" = 0 ]; then exit 0; fi
 newline
-green "$hr"; newline
+green "$(hr)"; newline
 green "Total space saved: $(format_mb "$TOTAL_SAVED_MB")"; newline
-green "$hr"; newline; newline
+green "$(hr)"; newline; newline
