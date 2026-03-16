@@ -23,8 +23,8 @@ cd cull
 cull [options]
 ```
 
-> **Note:** Cull requires Full Disk Access to scan all target directories.
-> Grant access to your terminal in **System Settings → Privacy & Security → Full Disk Access**,
+> Note: Cull requires Full Disk Access to scan all target directories.
+> Grant access to your terminal in *System Settings → Privacy & Security → Full Disk Access*,
 > then restart your terminal before running.
 
 ## Options
