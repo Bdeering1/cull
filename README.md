@@ -4,12 +4,28 @@ Reclaim disk space by removing stale caches, logs, and unneeded files.
 
 The goal of this project is to provide a safe and transparent tool for removing unneeded bloat on macOS. Cull operates only on the directories listed below and never touches system files. Confirmation is explicitly requested before every deletion. The only pre-requisite is Bash 3.2+ which ships with macOS by default.
 
-## Usage
+## Installation
 
+**Quick install**
 ```sh
-git clone https://github.com/bdeering1/cull.git
-cd cull && ./cull
+curl -fsSL https://raw.githubusercontent.com/Bdeering1/cull/main/install.sh | bash
 ```
+
+**From source**
+```sh
+git clone https://github.com/yourname/cull.git
+cd cull
+./install.sh
+```
+
+## Usage
+```sh
+cull [options]
+```
+
+> **Note:** Cull requires Full Disk Access to scan all target directories.
+> Grant access to your terminal in **System Settings → Privacy & Security → Full Disk Access**,
+> then restart your terminal before running.
 
 ## Options
 
