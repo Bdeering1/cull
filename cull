@@ -7,8 +7,7 @@ MIN_SIZE_MB=0
 DRY_RUN=false
 
 usage() {
-    echo
-    echo "Cull - Interactive disk cleanup tool for macOS"
+    echo "Interactive disk cleanup tool for macOS"
     echo
     echo "Usage: cull [options]"
     echo ""
@@ -121,13 +120,14 @@ confirm() {
 
 cull_directories=(
     "$HOME/Library/Caches"
-    "$HOME/Library/Logs"
+    "$HOME/Library/Application\ Support/Caches"
     "$HOME/Library/Containers/*/Data/Library/Caches"
+    "$HOME/Library/Logs"
 
     "$HOME/Library/Developer/CoreSimulator"
     "$HOME/Library/Developer/Xcode/DerivedData"
     "$HOME/Library/Developer/Xcode/iOS DeviceSupport"
-    "$HOME/Library/Application Support/MobileSync/Backup"
+    "$HOME/Library/Application\ Support/MobileSync/Backup"
 )
 
 pink "$(hr)"; newline
