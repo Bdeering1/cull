@@ -41,8 +41,9 @@ cull [options]
 | Directory | Contents |
 |---|---|
 | `~/Library/Caches` | Application cache files |
-| `~/Library/Logs` | Application log files |
 | `~/Library/Containers/*/Data/Library/Caches` | Sandboxed app caches |
+| `~/Library/Application Support/Caches` | Additional third-party app caches |
+| `~/Library/Logs` | Application log files |
 | `~/Library/Developer/CoreSimulator` | iOS simulator data |
 | `~/Library/Developer/Xcode/DerivedData` | Xcode build artifacts |
 | `~/Library/Developer/Xcode/iOS DeviceSupport` | iOS device symbols |
