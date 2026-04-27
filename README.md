@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/Bdeering1/cull/main/install.sh | ba
 
 **From source**
 ```sh
-git clone https://github.com/yourname/cull.git
+git clone https://github.com/Bdeering1/cull.git
 cd cull
 ./install.sh
 ```
