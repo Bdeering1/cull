@@ -2,9 +2,10 @@
 
 export COLUMNS
 
-AGE_DAYS=90
+AGE_DAYS=60
 MIN_SIZE_MB=0
 DRY_RUN=false
+FORCE=false
 
 usage() {
     echo "Interactive disk cleanup tool for macOS"
@@ -15,6 +16,7 @@ usage() {
     echo "  --age <days>      Minimum days since last accessed  (default: $AGE_DAYS)"
     echo "  --min-size <mb>   Minimum directory size in MB      (default: $MIN_SIZE_MB)"
     echo "  --dry             Preview without deleting"
+    echo "  -f, --force       Auto-accept all prompts"
     echo "  --help            Show this help message"
     echo
 }
@@ -24,6 +26,7 @@ while [[ $# -gt 0 ]]; do
         --age) AGE_DAYS="$2"; shift ;;
         --min-size) MIN_SIZE_MB="$2"; shift ;;
         --dry) DRY_RUN=true ;;
+        -f|--force) FORCE=true ;;
         --help) usage; exit 0 ;;
         *) ;;
     esac
@@ -110,9 +113,13 @@ hr() {
 }
 
 confirm() {
-    local default="${1:-n}"
+    local prompt="$1"
+    local default="${2:-n}"
     local reply
 
+    $FORCE && return 0
+
+    printf "%s" "$prompt"
     read -r reply
     reply="${reply:-$default}"
     [[ "$reply" =~ ^[Yy]$ ]]
@@ -120,8 +127,8 @@ confirm() {
 
 cull_directories=(
     "$HOME/Library/Caches"
-    "$HOME/Library/Application\ Support/Caches"
     "$HOME/Library/Containers/*/Data/Library/Caches"
+    "$HOME/Library/Application\ Support/Caches"
     "$HOME/Library/Logs"
 
     "$HOME/Library/Developer/CoreSimulator"
@@ -137,7 +144,7 @@ pink "  - last accessed more than: $AGE_DAYS days ago"; newline
 pink "  - size greater than: ${MIN_SIZE_MB}MB"; newline
 pink "$(hr)"; newline
 
-pink "Continue? [Y/n] "; confirm "y" || exit 0
+confirm "$(pink 'Continue? [Y/n] ')" "y" || exit 0
 
 TOTAL_SAVED_MB=0
 for root_dir in "${cull_directories[@]}"; do
@@ -159,13 +166,11 @@ for root_dir in "${cull_directories[@]}"; do
 
     if $DRY_RUN; then
         red "Skipped directory removal (dry run)."; newline
-        green "Continue? [Y/n] "
-        confirm "y" || exit 0
+        confirm "$(green 'Continue? [Y/n] ')" "y" || exit 0
         continue
     fi
 
-    red "Delete these directories? [y/N] "
-    if ! confirm; then
+    if ! confirm "$(red 'Delete these directories? [y/N] ')"; then
         green "Skipped directory removal."; newline
         continue
     fi
