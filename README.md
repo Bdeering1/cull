@@ -58,3 +58,13 @@ cull [options]
 **MobileSync Backup**: Local iOS device backups. Before deleting, ensure your device is backed up to iCloud or you have another backup available.
 
 **CoreSimulator**: Data for iOS simulators. Safe to delete for simulators you no longer use.
+
+## Developer Tool Caches
+
+After scanning directories, Cull offers to prune the caches of common developer tools. Each command is only shown if the tool is installed, and confirmation is requested before running it.
+
+| Command | Contents |
+|---|---|
+| `docker builder prune -f` | Docker build cache |
+| `npm cache clean --force` | npm package cache |
+| `pnpm store prune` | Unreferenced pnpm store packages |
