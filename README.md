@@ -63,8 +63,8 @@ cull [options]
 
 After scanning directories, Cull offers to prune common developer tool caches. Each command is only shown if the tool is installed, and confirmation is requested before running it.
 
-| Command | Contents |
+| Command | Targets |
 |---|---|
 | `docker builder prune -f` | Docker build cache |
 | `npm cache clean --force` | npm package cache |
-| `pnpm store prune` | Unreferenced pnpm store packages |
+| `pnpm store prune` | dangling pnpm store packages |
