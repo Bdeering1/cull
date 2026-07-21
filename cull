@@ -137,6 +137,12 @@ cull_directories=(
     "$HOME/Library/Application\ Support/MobileSync/Backup"
 )
 
+dev_tool_commands=(
+    "docker builder prune -f"
+    "npm cache clean --force"
+    "pnpm store prune"
+)
+
 pink "$(hr)"; newline
 pink "Cull - Interactive disk cleanup tool for macOS"; newline; newline
 pink "Finding stale caches, logs, and unneeded files using these criteria:"; newline
@@ -179,6 +185,33 @@ for root_dir in "${cull_directories[@]}"; do
     green "Removed $total of files."; newline
     TOTAL_SAVED_MB=$(echo "$TOTAL_SAVED_MB + $(to_mb "$total")" | bc)
 done
+
+dev_tools_exist=false
+for cmd in "${dev_tool_commands[@]}"; do
+    command -v "${cmd%% *}" >/dev/null 2>&1 && { dev_tools_exist=true; break; }
+done
+
+if $dev_tools_exist; then
+    newline
+    blue "Developer Tool Caches"; newline
+    blue "$(hr)"; newline
+    for cmd in "${dev_tool_commands[@]}"; do
+        command -v "${cmd%% *}" >/dev/null 2>&1 || continue
+        echo "$cmd"
+
+        if $DRY_RUN; then
+            red "Skipped cache prune (dry run)."; newline
+            continue
+        fi
+
+        if ! confirm "$(red 'Run this command? [y/N] ')"; then
+            green "Skipped cache prune."; newline; newline
+            continue
+        fi
+
+        eval "$cmd"; green "Pruned."; newline
+    done
+fi
 
 if [ "$TOTAL_SAVED_MB" = 0 ]; then exit 0; fi
 newline
