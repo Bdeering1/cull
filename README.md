@@ -2,7 +2,7 @@
 
 Reclaim disk space by removing stale caches, logs, and unneeded files.
 
-The goal of this project is to provide a safe and transparent tool for removing unneeded bloat on macOS. Cull operates only on the directories listed below and never touches system files. Confirmation is explicitly requested before every deletion. The only pre-requisite is Bash 3.2+ which ships with macOS by default.
+The goal of this project is to provide a safe and transparent tool for removing unneeded bloat on macOS. Cull operates only on the directories specified below and never touches system files. Confirmation is explicitly requested before every deletion.
 
 ## Installation
 
@@ -61,7 +61,7 @@ cull [options]
 
 ## Developer Tool Caches
 
-After scanning directories, Cull offers to prune the caches of common developer tools. Each command is only shown if the tool is installed, and confirmation is requested before running it.
+After scanning directories, Cull offers to prune common developer tool caches. Each command is only shown if the tool is installed, and confirmation is requested before running it.
 
 | Command | Contents |
 |---|---|
